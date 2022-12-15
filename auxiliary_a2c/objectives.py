@@ -124,8 +124,7 @@ class DecomposedReturnsObjective(AuxiliaryObjective, nn.Module):
             action_dim: int,
             shared_net_arch: List[int],
             predictor_net_arch: List[int],
-            loss_weights: Dict[str, float],
-            device: str = "cpu"):
+            loss_weights: Dict[str, float]):
         """
         A unified implementation of an auxiliary loss that predicts decomposed returns.
         Args:
@@ -144,7 +143,6 @@ class DecomposedReturnsObjective(AuxiliaryObjective, nn.Module):
                 (specified as ints of MLP laye size)
             loss_weights: The weights for each predictor in the final loss calculation
                 (specified as dict from key to float)
-            device: The torch to keep the internal model onto
         
         """
         super().__init__()
@@ -154,7 +152,6 @@ class DecomposedReturnsObjective(AuxiliaryObjective, nn.Module):
         self.n_step = n_step
         self.gamma = gamma
         self.loss_weights = loss_weights
-        self.device = device
         self.create_networks(feature_dim = feature_dim, action_dim= action_dim, 
             shared_net_arch= shared_net_arch, predictor_net_arch= predictor_net_arch)
         self.create_normalizers()
@@ -179,14 +176,14 @@ class DecomposedReturnsObjective(AuxiliaryObjective, nn.Module):
             modules.append(nn.Linear(arch[idx], arch[idx + 1]))
             modules.append(nn.ELU())
         self.shared_net = nn.Sequential(*modules)
-        self.shared_net = self.shared_net.to(device = self.device)
         for key in self.keys_to_predict:
             tail = PredictorTail(input_dim= predictor_input_dim, net_arch=predictor_net_arch)
-            tail = tail.to(device = self.device)
             setattr(self, f"{key}_tail", tail)
         
-    def forward(self, features: th.Tensor, actions: th.Tensor) -> Dict[str, Normal]:
+    def forward(self, data: Dict[str, th.Tensor]) -> Dict[str, Normal]:
         output = {}
+        features = data["encoded_observations"]
+        actions = data["actions"]
         shared_features = self.shared_net(th.cat((features, actions), dim=1))
         shared_features = th.cat((shared_features, actions), dim=1)
         for key in self.keys_to_predict:
@@ -203,7 +200,7 @@ class DecomposedReturnsObjective(AuxiliaryObjective, nn.Module):
         mask = th.from_numpy(np.array([len(info_samples) >= self.n_step for info_samples in infos]))
         masked_features = features[mask]
         masked_actions = actions[mask]
-        pred = self.forward(features = masked_features, actions = masked_actions)
+        pred = self.forward(dict(encoded_observations = masked_features, actions = masked_actions))
         loss = None
 
         for key in self.keys_to_predict:
@@ -215,7 +212,7 @@ class DecomposedReturnsObjective(AuxiliaryObjective, nn.Module):
             facet_returns = discount_n_step_2d(rewards = np.array(rewards), 
                 n_step=self.n_step, gamma=self.gamma)
             target = th.from_numpy(self.normalizers[key](facet_returns))
-            target = target.to(device= self.device)
+            target = target.to(device= next(self.parameters()).device)
             target = target.reshape(-1, 1)
             facet_loss = -th.mean(pred[key].log_prob(target))
             if loss is None:
