@@ -6,10 +6,8 @@ setup(
     include_package_data=True,
     python_requires='>=3.9',
     install_requires=[
-        "gym==0.21",
         "numpy",
-        "stable-baselines3>=1.5.0",
-        "torch"
+        "stable-baselines3>=2.0",
     ],
     description="An extension of SB3's A2C algorithm with an option to add auxiliary losses",
     author="Sagar Patel",
