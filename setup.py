@@ -14,5 +14,5 @@ setup(
     url="https://github.com/sagar-pa/auxiliary_sb3",
     author_email="sagar.patel@uci.edu",
     license="MIT",
-    version=0.1,
+    version=0.15,
 )

@@ -2,7 +2,7 @@ from typing import NamedTuple, List, Union, Dict, Any, Optional
 import torch as th
 from stable_baselines3.common.vec_env import VecNormalize
 from stable_baselines3.common.buffers import RolloutBuffer
-from gym import spaces
+from gymnasium import spaces
 import numpy as np
 from copy import deepcopy
 
