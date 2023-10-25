@@ -5,7 +5,7 @@ from stable_baselines3.common.type_aliases import GymEnv, Schedule
 from stable_baselines3.common.vec_env import VecEnv
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.utils import obs_as_tensor, explained_variance
-from gym import spaces
+from gymnasium import spaces
 from torch.nn import functional as F
 import torch as th
 import numpy as np
